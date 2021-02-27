@@ -122,11 +122,11 @@ def update_info():
     gameDescTxt.insert(1.0, "{}".format(df.iloc[currentIndex].game_description), 'warning')
 
     currentGameId = df.iloc[currentIndex].id
-    current_game_df = df[['id','word','changed_word2','std_word']]
+    current_game_df = (df[['id','word','changed_word2','std_word', 'remark', 'duplicate']])
     current_game_df = current_game_df.loc[current_game_df['id'] == currentGameId]
+    current_game_df = current_game_df.sort_values("remark")
 
     backMatchBox.insert(1.0, "{}".format(current_game_df))
-
 
     highlight_word()
 
@@ -172,7 +172,8 @@ def load_file():
                     "changed_word": str, 
                     "remark": str, 
                     "std_word": str,
-                    "occurances": int})      
+                    "occurances": int,
+                    "duplicate": int})      
     
     df = df.sort_values(['id', 'std_word'], ascending=[True, False])
 
@@ -199,11 +200,11 @@ root.geometry('{}x{}+40+40'.format(rootWidth, rootHeight))
 root.resizable(width=False, height=False)
 
 # SET FRAME DIMENSIONS
-frame1 = Frame(root, width=900, height=900)
+frame1 = Frame(root, width=700, height=900)
 frame1.place(x=0,y=0)
 frame1.config(bg="grey11")
-frame2 = Frame(root, width=900, height=900)
-frame2.place(x=900,y=0)
+frame2 = Frame(root, width=1100, height=900)
+frame2.place(x=700,y=0)
 frame2.config(bg="grey22")
 
 # FRAME 1
@@ -232,19 +233,19 @@ nextBtn = HoverButton(frame1, text="Next", command=next_row, padx=2, pady=2)
 nextBtn.place(x=100,y=75)
 
 loadFileBtn = HoverButton(frame1, text="Load", command=load_file)
-loadFileBtn.place(x=410,y=75)
+loadFileBtn.place(x=210,y=75)
 loadFileInput = Entry(frame1, width=42, justify = "left", font=('Consolas', 12))
-loadFileInput.place(x=475,y=79)
+loadFileInput.place(x=275,y=79)
 loadFileInput.configure(background = "black", foreground="white", font=('Consolas', 12))
 
-gameDescTxt = st.ScrolledText(frame1, undo=True, width=70, height=31, wrap="word", bg = "black", fg = "white", font=('Consolas', 16))
+gameDescTxt = st.ScrolledText(frame1, undo=True, width=55, height=31, wrap="word", bg = "black", fg = "white", font=('Consolas', 16))
 gameDescTxt.place(x=5, y=120)
 gameDescTxt.insert(1.0, "LOAD A FILE..")
 
 #FRAME 2
-backMatchCanvas = Frame(frame2, bg='grey22', width=880, height=950)
+backMatchCanvas = Frame(frame2, bg='grey22', width=1080, height=950)
 backMatchCanvas.place(x=5,y=5)
-backMatchBox = st.ScrolledText(backMatchCanvas, width=100, height=46, wrap="none")
+backMatchBox = st.ScrolledText(backMatchCanvas, width=120, height=46, wrap="none")
 backMatchBox.configure(background = "black", foreground="white", font=('Consolas', 12))
 backMatchBox.place(x=5,y=5)
 
