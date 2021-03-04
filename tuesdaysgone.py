@@ -109,6 +109,8 @@ def update_info():
     global gameDescInfo
     global gameDescTxt
     global current_game_df
+    global hoverList
+    global matchCase
 
     numInfo = Label(frame1, text=df.iloc[currentIndex].game_num)
     numInfo.place(x=10, y=35)
@@ -119,45 +121,136 @@ def update_info():
     gameDescInfo = Label(frame1, text=df.iloc[currentIndex].game_name)
     gameDescInfo.place(x=300, y=35)
     gameDescInfo.configure(background = "black", foreground="white", font=('Consolas', 12))
-    gameDescTxt.insert(1.0, "{}".format(df.iloc[currentIndex].game_description), 'warning')
+    description = str(df.iloc[currentIndex].game_description).replace(" ","_").lower()
+    gameDescTxt.insert(1.0, description, 'warning')
 
     currentGameId = df.iloc[currentIndex].id
-    current_game_df = (df[['id','word','changed_word2','std_word', 'remark', 'duplicate']])
+    current_game_df = (df[['id','index','word','std_word', 'remark', 'duplicate']])
     current_game_df = current_game_df.loc[current_game_df['id'] == currentGameId]
-    current_game_df = current_game_df.sort_values("remark")
+
+    current_game_df = current_game_df.sort_values("index")
+
+    test_desc = str(df.iloc[currentIndex].game_description).replace(" ","_").lower()
+    test_desc = test_desc.replace(".","_")
+    test_desc = test_desc.replace('"','_')
+    test_desc = test_desc.replace('!','_')
+    test_desc = test_desc.replace(',','_')
+    #print(test_desc)
+
+    desc_word_list = test_desc.split("_")
+    #print(desc_word_list)
 
     backMatchBox.insert(1.0, "{}".format(current_game_df))
 
-    highlight_word()
+    matchDf = current_game_df.loc[current_game_df['id'] == currentGameId]
+    matchDf = (current_game_df[['id','word','index','std_word', 'remark', 'duplicate']]) 
+    
+    werd_order = []
+    werds = []
 
-def highlight_word():
+    for werd in matchDf['word']:
+        lower_werd = werd.lower().split("_")[0]
+        werd_order.append(desc_word_list.index(lower_werd))
+        werds.append(lower_werd)
 
-    currentGameWordList = current_game_df['word']
-    for w in currentGameWordList:
-        print(w.replace("_"," "))
+    print(werds)
+    print(werd_order)
+    
 
-        global start_pos
-        start_pos = 0
-        global end_pos
-        end_pos = ''
-        #gameDescTxt.delete('1.0', tk.END)
-        #gameDescTxt.insert(1.0, df.iloc[currentIndex].game_description, 'warning')
-        #h_word = df.iloc[currentIndex].word.replace(" ","_")
-        h_word = w.replace(" ","_")
-        h_word = w.strip()
-        start_pos = gameDescTxt.search(h_word, '1.0', stopindex=tk.END)
-        if not start_pos:   #in case the word is capitalized b/c it's first word in sentence
-            start_pos = gameDescTxt.search(h_word.capitalize(), '1.0', stopindex=tk.END)
-        if not start_pos:   #in case the word is all uppercase letters  
-            start_pos = gameDescTxt.search(h_word.upper(), '1.0', stopindex=tk.END)
-        if not start_pos:   #in case the word has hyphens
-            start_pos = gameDescTxt.search(h_word.replace(" ","-"), '1.0', stopindex=tk.END)
-        if start_pos:
-            if end_pos:
-                gameDescTxt.tag_remove('highlight', start_pos, end_pos)
-            end_pos = '{}+{}c'.format(start_pos, len(h_word))            
-            gameDescTxt.tag_add('highlight', start_pos, end_pos)
-            gameDescTxt.tag_config('highlight', background='yellow', foreground = "black")
+
+    matchDf['order'] = werd_order
+    matchDf = matchDf.sort_values('order')
+
+    print(matchDf)
+
+    matchList = []
+
+    for i in range(len(matchDf)):
+        # matchList.append(matchDf[i])
+        matchList = matchDf.values.tolist()
+    checkBoxList = []
+    checkBoxes = []
+    labelList = []
+    hoverList = []
+    for matchCase in range(len(matchList)):
+        labelList.append(Label(searchListBox, text=matchList[matchCase][1]))
+        labelList[matchCase].changed_word = matchList[matchCase]
+        labelList[matchCase].config(background = "black", foreground= 'white', font = ('Consolas', 12, 'bold'))
+        # labelList[i].bind("<Enter>", on_enter)
+        # labelList[i].bind("<Leave>", on_leave)
+        checkBoxList.append(IntVar())
+        checkBoxes.append(Checkbutton(searchListBox, text='', variable=checkBoxList[matchCase], selectcolor="grey88", background='black'))
+        hoverList.append(Label(searchListBox, text="HOVER OVER TO SEE DESCRIPTIONS   XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX "))
+        hoverList[matchCase].word = matchList[matchCase]
+        hoverList[matchCase].config(background = "black", foreground= 'black', font = ('Consolas', 12))
+        hoverList[matchCase].bind("<Enter>", on_enter)
+        hoverList[matchCase].bind("<Leave>", on_leave)
+        searchListBox.window_create("end", window=checkBoxes[matchCase])
+        searchListBox.window_create("end", window=labelList[matchCase])
+        searchListBox.window_create("end", window=hoverList[matchCase])
+        searchListBox.insert("end", "\n")
+
+    #highlight_word()
+
+def on_enter(event):
+    global hoverList
+    global matchCase
+    w = getattr(event.widget, "word", "")[1].lower().replace(" ","_")
+    global start_pos
+    start_pos = 0
+    global end_pos
+    end_pos = ''
+    #gameDescTxt.delete('1.0', tk.END)
+    #gameDescTxt.insert(1.0, df.iloc[currentIndex].game_description, 'warning')
+    #h_word = df.iloc[currentIndex].word.replace(" ","_")
+    # h_word = w.replace(" ","_")
+    h_word = w.strip()
+    
+    start_pos = gameDescTxt.search(h_word, '1.0', stopindex=tk.END)
+    # if not start_pos:   #in case the word is capitalized b/c it's first word in sentence
+    #     start_pos = gameDescTxt.search(h_word.capitalize(), '1.0', stopindex=tk.END)
+    # if not start_pos:   #in case the word is all uppercase letters  
+    #     start_pos = gameDescTxt.search(h_word.upper(), '1.0', stopindex=tk.END)
+    # if not start_pos:   #in case the word has hyphens
+    #     start_pos = gameDescTxt.search(h_word.replace(" ","-").lower(), '1.0', stopindex=tk.END)
+    if start_pos:
+        if end_pos:
+            gameDescTxt.tag_remove('highlight', start_pos, end_pos)
+        end_pos = '{}+{}c'.format(start_pos, len(h_word))            
+        gameDescTxt.tag_add('highlight', start_pos, end_pos)
+        gameDescTxt.tag_config('highlight', background='yellow', foreground = "black")
+
+def on_leave(event):
+    gameDescTxt.tag_remove('highlight', '1.0', tk.END)
+
+# def highlight_word():
+
+#     currentGameWordList = current_game_df['word']
+#     for w in currentGameWordList:
+#         print(w.replace("_"," "))
+
+#         global start_pos
+#         start_pos = 0
+#         global end_pos
+#         end_pos = ''
+#         #gameDescTxt.delete('1.0', tk.END)
+#         #gameDescTxt.insert(1.0, df.iloc[currentIndex].game_description, 'warning')
+#         #h_word = df.iloc[currentIndex].word.replace(" ","_")
+#         h_word = w.replace(" ","_")
+#         h_word = w.strip()
+#         start_pos = gameDescTxt.search(h_word, '1.0', stopindex=tk.END)
+#         if not start_pos:   #in case the word is capitalized b/c it's first word in sentence
+#             start_pos = gameDescTxt.search(h_word.capitalize(), '1.0', stopindex=tk.END)
+#         if not start_pos:   #in case the word is all uppercase letters  
+#             start_pos = gameDescTxt.search(h_word.upper(), '1.0', stopindex=tk.END)
+#         if not start_pos:   #in case the word has hyphens
+#             start_pos = gameDescTxt.search(h_word.replace(" ","-"), '1.0', stopindex=tk.END)
+#         if start_pos:
+#             if end_pos:
+#                 gameDescTxt.tag_remove('highlight', start_pos, end_pos)
+#             end_pos = '{}+{}c'.format(start_pos, len(h_word))            
+#             gameDescTxt.tag_add('highlight', start_pos, end_pos)
+#             gameDescTxt.tag_config('highlight', background='yellow', foreground = "black")
 
 def load_file():
     global df
@@ -194,16 +287,16 @@ def load_file():
 ##################################################################################################################
 
 # SET WINDOW SIZE
-rootWidth = 1800
+rootWidth = 1900
 rootHeight = 900
-root.geometry('{}x{}+40+40'.format(rootWidth, rootHeight))
+root.geometry('{}x{}+10+40'.format(rootWidth, rootHeight))
 root.resizable(width=False, height=False)
 
 # SET FRAME DIMENSIONS
 frame1 = Frame(root, width=700, height=900)
 frame1.place(x=0,y=0)
 frame1.config(bg="grey11")
-frame2 = Frame(root, width=1100, height=900)
+frame2 = Frame(root, width=1200, height=900)
 frame2.place(x=700,y=0)
 frame2.config(bg="grey22")
 
@@ -243,8 +336,15 @@ gameDescTxt.place(x=5, y=120)
 gameDescTxt.insert(1.0, "LOAD A FILE..")
 
 #FRAME 2
-backMatchCanvas = Frame(frame2, bg='grey22', width=1080, height=950)
-backMatchCanvas.place(x=5,y=5)
+
+searchCanvas = Canvas(frame2, bg='black', width=350, height=900)
+searchCanvas.place(x=5,y=5)
+searchListBox = st.ScrolledText(searchCanvas, width=40, height=52, wrap="none")
+searchListBox.configure(background = "black")
+searchListBox.pack() 
+
+backMatchCanvas = Canvas(frame2, bg='black', width=800, height=900)
+backMatchCanvas.place(x=350,y=5)
 backMatchBox = st.ScrolledText(backMatchCanvas, width=120, height=46, wrap="none")
 backMatchBox.configure(background = "black", foreground="white", font=('Consolas', 12))
 backMatchBox.place(x=5,y=5)
