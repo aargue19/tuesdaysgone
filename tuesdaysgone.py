@@ -63,8 +63,20 @@ class HoverButton(tk.Button):
 # FUNCTIONS
 def prev_row():
     global currentIndex
+    global CurrentGameId
+    global currentIndex
+    skipNum = 0
     if currentIndex > 0:
-        currentIndex = currentIndex - 1
+        if df.iloc[currentIndex - 1].id == df.iloc[currentIndex].id:
+            while keepSkipping == True:
+                count -= 1
+                if df.iloc[currentIndex + count].id == df.iloc[currentIndex].id:
+                    skipNum+=1
+                else:
+                    keepSkipping = False        
+        
+        currentIndex = currentIndex - (1 +skipNum)
+
     destroy_info()
     update_info()
 
@@ -136,6 +148,7 @@ def update_info():
     description = description.replace('"',' ')
     description = description.replace('!',' ')
     description = description.replace(',',' ')
+    description = description.replace('?',' ')
     gameDescTxt.insert(1.0, description, 'warning')
 
     currentGameId = df.iloc[currentIndex].id
@@ -149,6 +162,7 @@ def update_info():
     test_desc = test_desc.replace('"',' ')
     test_desc = test_desc.replace('!',' ')
     test_desc = test_desc.replace(',',' ')
+    test_desc = test_desc.replace('?',' ')
     #print(test_desc)
 
     desc_word_list = test_desc.split(" ")
@@ -167,6 +181,7 @@ def update_info():
         werd = werd.replace('"',' ')
         werd = werd.replace('!',' ')
         werd = werd.replace(',',' ')
+        werd = werd.replace('?',' ')
         lower_werd = werd.lower().split(" ")[0]
 
         if lower_werd in desc_word_list:
