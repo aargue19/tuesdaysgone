@@ -65,12 +65,23 @@ class HoverButton(tk.Button):
         self['background'] = self.defaultBackground
 
 # FUNCTIONS
+def jump_to_index():
+    global currentIndex
+
+    currentIndex = int(jumpToInput.get())
+
+    destroy_info()
+    update_info()
+    update_std_words()
+
 def prev_row():
     global currentIndex
-    global CurrentGameId
-    global currentIndex
+    global currentGameId
+
     keepSkipping = True
     skipNum = 0
+    count = 0
+
     if currentIndex > 0:
         if df.iloc[currentIndex - 1].id == df.iloc[currentIndex].id:
             while keepSkipping == True:
@@ -84,10 +95,11 @@ def prev_row():
 
     destroy_info()
     update_info()
+    update_std_words()
 
 def next_row():
     global currentIndex
-    global CurrentGameId
+    global currentGameId
     keepSkipping = True
     skipNum = 0
     count = 0
@@ -107,6 +119,7 @@ def next_row():
 
     destroy_info()
     update_info()
+    update_std_words()
     
 def destroy_info():
     global numInfo
@@ -319,7 +332,7 @@ def update_info():
         searchListBox.insert("end", "\n")
 
 
-
+    
     #highlight_word()
 
 def do_something(c):
@@ -465,6 +478,34 @@ def load_file():
     currentGameId = df.iloc[0].id
 
     update_info()   
+    update_std_words()
+
+def filter_std_alpha(letter):
+    letter = letter.lower()
+    bwList = df['std_word'][df['std_word'] != "nan"].tolist()
+    bwList = sorted(set(bwList))
+    stdListBox.delete(0, tk.END)
+
+    for item in bwList:
+        if item[0] == letter:          
+            stdListBox.insert(tk.END, item)     
+
+def update_std_words():
+    stdListBox.delete(0, tk.END)
+    bwList = df['std_word'][df['std_word'] != "nan"].tolist()
+    filterTerm = stdSearchInput.get()
+    if filterTerm == "":
+        for item in sorted(list(set(bwList))):
+            stdListBox.insert(tk.END, item)   
+    else:
+        for item in sorted(list(set(bwList))):
+            if filterTerm in item:
+                stdListBox.insert(tk.END, item)     
+
+def std_search():
+    global filterTerm
+    filterTerm = stdSearchInput.get()
+    update_std_words()
 
 ##################################################################################################################
 ##################################################################################################################
@@ -478,15 +519,15 @@ def load_file():
 
 # SET WINDOW SIZE
 rootWidth = 1900
-rootHeight = 900
+rootHeight = 1000
 root.geometry('{}x{}+10+40'.format(rootWidth, rootHeight))
 root.resizable(width=False, height=False)
 
 # SET FRAME DIMENSIONS
-frame1 = Frame(root, width=700, height=900)
+frame1 = Frame(root, width=700, height=1000)
 frame1.place(x=0,y=0)
 frame1.config(bg="grey11")
-frame2 = Frame(root, width=1200, height=900)
+frame2 = Frame(root, width=1200, height=1000)
 frame2.place(x=700,y=0)
 frame2.config(bg="grey22")
 
@@ -511,24 +552,64 @@ gameDescInfo.place(x=300, y=35)
 gameDescInfo.configure(background = "black", foreground="white", font=('Consolas', 12))
 
 prevBtn= HoverButton(frame1, text="Previous", command=prev_row, padx=2, pady=2)
-prevBtn.place(x=10,y=75)
+prevBtn.place(x=10,y=70)
 nextBtn = HoverButton(frame1, text="Next", command=next_row, padx=2, pady=2)
-nextBtn.place(x=100,y=75)
+nextBtn.place(x=100,y=70)
 
-loadFileBtn = HoverButton(frame1, text="Load", command=load_file)
-loadFileBtn.place(x=210,y=75)
-loadFileInput = Entry(frame1, width=42, justify = "left", font=('Consolas', 12))
-loadFileInput.place(x=275,y=79)
-loadFileInput.configure(background = "black", foreground="white", font=('Consolas', 12))
 
-gameDescTxt = st.ScrolledText(frame1, undo=True, width=55, height=31, wrap="word", bg = "black", fg = "white", font=('Consolas', 16))
-gameDescTxt.place(x=5, y=120)
+
+jumpToBtn = HoverButton(frame1, text="Jump", command=jump_to_index)
+jumpToBtn.place(x=210,y=70)
+jumpToInput = Entry(frame1, width=42, justify = "left", font=('Consolas', 12))
+jumpToInput.place(x=275,y=74)
+jumpToInput.configure(background = "black", foreground="white", font=('Consolas', 12))
+
+gameDescTxt = st.ScrolledText(frame1, undo=True, width=38, height=45, wrap="word", bg = "black", fg = "white", font=('Consolas', 12))
+gameDescTxt.place(x=325, y=120)
 gameDescTxt.insert(1.0, "LOAD A FILE..")
+
+
+stdSearchBtn = HoverButton(frame1, text="Search", command=std_search, padx=2, pady=2)
+stdSearchInput = Entry(frame1, width=20, justify = "left", font=('Consolas', 12))
+stdSearchBtn.place(x=10, y=105)
+stdSearchInput.place(x=95, y=109)
+
+
+buttons = []
+xcoord = 0
+ycoord = 150
+letters = ["A","B","C","D","E","F","G","H","I","J","K","L","M",
+           "N","O","P","Q","R","S","T","U","V","W","X","Y","Z",]
+
+for i in range(26):
+    xcoord +=20
+    b = HoverButton(frame1, width = 2, height=1, padx=0, pady=0, text = "%s" % (letters[i]), command=lambda i=i: filter_std_alpha(letters[i]))
+    if i <= 12:
+        b.place(x=xcoord, y=ycoord)
+    else:
+        b.place(x=xcoord-260, y=ycoord+25)
+    buttons.append(b)
+
+stdCanvas = Canvas(frame1, bg='green', width=340, height=900)
+stdCanvas.place(x=10,y=210)
+
+stdScrollbar = Scrollbar(stdCanvas, orient="vertical")
+stdScrollbar.pack(side="right", fill="y")
+stdListBox = Listbox(stdCanvas, width=40, height=48, background = "black", foreground="white", font = ('Consolas', 10, 'bold'))
+stdListBox.pack()
+stdListBox.insert(tk.END, "LIST OF STANDARDIZED WORDS..")
+stdListBox.configure(yscrollcommand=stdScrollbar.set)
+stdScrollbar.config(command=stdListBox.yview)
+
 
 #FRAME 2
 
 
-
+loadFileBtn = HoverButton(frame2, text="Load", command=load_file)
+loadFileBtn.place(x=710,y=955)
+loadFileInput = Entry(frame2, width=42, justify = "left", font=('Consolas', 12))
+loadFileInput.place(x=775,y=959)
+loadFileInput.configure(background = "black", foreground="white", font=('Consolas', 12))
 
 
 word_label = Label(frame2, text="WORD")
